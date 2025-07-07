@@ -1,217 +1,195 @@
-from flask import Flask, render_template, request, send_file, jsonify
-from fpdf import FPDF
-from datetime import datetime
-import os
-from fpdf.enums import XPos, YPos
-
-app = Flask(__name__)
-
-# Dados fixos dos advogados
-DADOS_ADVOGADOS = {
-    "TIAGO": {
-        "nome": "TIAGO LACHESKI SILVEIRA DE OLIVEIRA",
-        "estado_civil": "casado",
-        "profissao": "advogado",
-        "cpf": "017.353.012-56",
-        "rg": "13.437.948-0",
-        "orgao_emissor": "SESP/PR",
-        "oab": ["102.510", "11.124"],  # OAB/PR e OAB/RO
-    },
-    "THAYRONE": {
-        "nome": "THAYRONE DANIEL ROSA SANTOS",
-        "estado_civil": "solteiro",
-        "profissao": "advogado",
-        "cpf": "025.586.412-47",
-        "rg": "não informado",
-        "orgao_emissor": "SSPRO",
-        "oab": ["15.231"],  # Apenas OAB/RO
-    },
-    "SEBASTIÃO": {
-        "nome": "SEBASTIÃO BRINATI LOPES SIMIQUELI",
-        "estado_civil": "solteiro",
-        "profissao": "advogado",
-        "cpf": "003.698.752-22",
-        "rg": "1877906",
-        "orgao_emissor": "SSPRO",
-        "oab": ["14.719"],  # Apenas OAB/RO
-    }
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --success-color: #27ae60;
+    --error-color: #e74c3c;
+    --border-radius: 4px;
 }
 
-ENDERECO_ADV = "Av. Tancredo Neves nº 2.871, Bairro Centro, Machadinho D'Oeste/RO, CEP 76.868-000"
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    padding: 20px;
+}
 
-def header(pdf):
-    logo_width = 60
-    page_width = pdf.w
-    x_pos = (page_width - logo_width) / 2
-    pdf.image('static/images/logolacheski.png', x=x_pos, y=8, w=logo_width)
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
 
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
 
-def formatar_cpf(cpf_num):
-    cpf_num = ''.join(filter(str.isdigit, cpf_num))
-    return f"{cpf_num[:3]}.{cpf_num[3:6]}.{cpf_num[6:9]}-{cpf_num[9:]}"
+.header h1 {
+    color: var(--primary-color);
+    font-size: 24px;
+    margin-bottom: 10px;
+}
 
+.header p {
+    color: #666;
+}
 
-def gerar_procuracao(dados_cliente, incluir_thayrone, incluir_sebastiao):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=20)
-    pdf.add_page()
-    pdf.set_margins(left=30, top=30, right=20)
+.form-group {
+    margin-bottom: 20px;
+}
 
-    # Adiciona o cabeçalho com a logo
-    header(pdf)
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--dark-color);
+}
 
-    # Configuração de fonte e espaçamento
-    pdf.set_font("Times", size=12)
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    transition: border 0.3s;
+}
 
-    # Header
-    pdf.set_font("Times", 'B', 14)
-    pdf.cell(0, 22, "P R O C U R A Ç Ã O", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-    pdf.ln(5)
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+}
 
-    # Outorgante
-    pdf.set_font("Times", 'B', 12)
-    pdf.cell(0, 7, "OUTORGANTE:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Times", size=12)
+.checkbox-group {
+    margin-top: 10px;
+}
 
-    texto_outorgante = f"{dados_cliente['nome_completo']}, brasileiro(a), {dados_cliente['estado_civil']}(a), {dados_cliente['profissao']}, devidamente inscrito(a) no CPF n.º {dados_cliente['cpf']}, residente e domiciliado(a) à {dados_cliente['endereco']}"
+.checkbox-group label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+    user-select: none;
+}
 
-    pdf.set_x(37.5)
-    pdf.multi_cell(0, 7, texto_outorgante)
-    pdf.ln(5)
+.checkbox-group input {
+    margin-right: 8px;
+}
 
-    # Outorgado
-    pdf.set_font("Times", 'B', 12)
-    pdf.cell(0, 7, "OUTORGADO:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Times", size=12)
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
 
-    advogados_selecionados = [DADOS_ADVOGADOS["TIAGO"]]
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
 
-    if incluir_thayrone:
-        advogados_selecionados.append(DADOS_ADVOGADOS["THAYRONE"])
+.btn-primary {
+    background-color: var(--secondary-color);
+    color: white;
+}
 
-    if incluir_sebastiao:
-        advogados_selecionados.append(DADOS_ADVOGADOS["SEBASTIÃO"])
+.btn-primary:hover {
+    background-color: #2980b9;
+}
 
-    texto_outorgado = ""
-    for i, advogado in enumerate(advogados_selecionados):
-        partes = [
-            f"{advogado['nome']}",
-            "brasileiro" if advogado["estado_civil"] == "solteiro" else "brasileiro, " + advogado["estado_civil"],
-            advogado["profissao"],
-            f"inscrito no CPF sob o n.º {advogado['cpf']}",
-            f"RG n.º {advogado['rg']}, {advogado['orgao_emissor']}"
-        ]
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
 
-        if len(advogado["oab"]) == 1:
-            partes.append(f"OAB/RO n.º {advogado['oab'][0]}")
-        else:
-            partes.append(f"OAB/PR n.º {advogado['oab'][0]}, e OAB/RO n.º {advogado['oab'][1]}")
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
 
-        texto_outorgado += ", ".join(partes)
+.status-message {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    text-align: center;
+}
 
-        if i < len(advogados_selecionados) - 1:
-            texto_outorgado += " & "
+.success {
+    background-color: rgba(39, 174, 96, 0.2);
+    color: var(--success-color);
+}
 
-    texto_outorgado += f", com endereço profissional situado na {ENDERECO_ADV}."
+.error {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: var(--error-color);
+}
 
-    pdf.set_x(37.5)
-    pdf.multi_cell(0, 7, texto_outorgado)
-    pdf.ln(5)
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
 
-    # Poderes
-    pdf.set_font("Times", 'B', 12)
-    pdf.cell(0, 7, "PODERES GERAIS:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.set_font("Times", size=12)
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
 
-    poderes = "O outorgante nomeia os outorgados seus procuradores, concedendo-lhes os poderes inerentes da cláusula ad judicia et extra para o foro em geral, podendo promover quaisquer medidas judiciais ou administrativas, oferecer defesa, interpor recursos, ajuizar ações e conduzir os respectivos processos, solicitar, providenciar e ter acesso a documentos de qualquer natureza, sendo o presente instrumento de mandato oneroso e contratual, podendo substabelecer este a outrem, com ou sem reserva de poderes, a fim de praticar todos os demais atos necessários ao fiel desempenho deste mandato, além de reconhecer a procedência do pedido, transigir, desistir, renunciar ao direito sobre o qual se funda a ação, receber, dar quitação, firmar compromisso e assinar declaração de hipossuficiência econômica."
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
 
-    pdf.set_x(37.5)
-    pdf.multi_cell(0, 7, poderes)
-    pdf.ln(10)
+.close:hover {
+    color: black;
+}
 
-    # Data e assinatura
-    data_atual = datetime.now().strftime("%d de %B de %Y").lower()
-    meses = {
-        "january": "janeiro", "february": "fevereiro", "march": "março",
-        "april": "abril", "may": "maio", "june": "junho",
-        "july": "julho", "august": "agosto", "september": "setembro",
-        "october": "outubro", "november": "novembro", "december": "dezembro"
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
     }
-    for eng, pt in meses.items():
-        data_atual = data_atual.replace(eng, pt)
 
-    pdf.set_font("Times", size=12)
-    pdf.cell(0, 7, f"Machadinho D'Oeste, {data_atual}.", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.ln(15)
-
-    # Linha para assinatura
-    pdf.cell(0, 7, "___________________________", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-    pdf.cell(0, 7, "OUTORGANTE", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
-
-    # Salva o arquivo temporário
-    nome_arquivo = f"Procuração_{dados_cliente['nome_completo'].replace(' ', '_')}.pdf"
-    caminho_arquivo = os.path.join('static/temp', nome_arquivo)
-    pdf.output(caminho_arquivo)
-
-    return caminho_arquivo
-
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/gerar-procuracao', methods=['POST'])
-def gerar_procuracao_route():
-    try:
-        data = request.json
-
-        # Validação dos dados
-        required_fields = ['nome_completo', 'profissao', 'cpf', 'endereco', 'estado_civil']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'O campo {field.replace("_", " ")} é obrigatório!'}), 400
-
-        # Validação do CPF
-        cpf_limpo = ''.join(filter(str.isdigit, data['cpf']))
-        if len(cpf_limpo) != 11:
-            return jsonify({'error': 'CPF deve conter 11 dígitos!'}), 400
-
-        # Formata o CPF
-        data['cpf'] = formatar_cpf(data['cpf'])
-
-        # Padroniza os dados
-        data['nome_completo'] = data['nome_completo'].upper()
-        data['estado_civil'] = data['estado_civil'].lower()
-        data['profissao'] = data['profissao'].lower()
-
-        # Gera a procuração
-        arquivo = gerar_procuracao(
-            data,
-            data.get('incluir_thayrone', True),
-            data.get('incluir_sebastiao', False)
-        )
-
-        return jsonify({
-            'success': True,
-            'filename': os.path.basename(arquivo),
-            'download_url': f'/download/{os.path.basename(arquivo)}'
-        })
-
-    except Exception as e:
-        return jsonify({'error': f'Ocorreu um erro ao gerar a procuração: {str(e)}'}), 500
-
-
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_file(
-        os.path.join('static/temp', filename),
-        as_attachment=True,
-        download_name=filename
-    )
-
-
-if __name__ == '__main__':
-    os.makedirs('static/temp', exist_ok=True)
-    app.run(debug=True)
+    .form-actions {
+        flex-direction: column;
+    }
+}
